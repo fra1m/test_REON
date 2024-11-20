@@ -44,7 +44,4 @@ export class TokenEntity extends BaseEntity {
     select: false,
   })
   createdAt: Date;
-
-  //FIXME: что это такое
-  static token: any;
 }

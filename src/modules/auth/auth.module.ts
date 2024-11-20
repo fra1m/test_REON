@@ -5,7 +5,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { TokenEntity } from './entities/token.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CodeModule } from '@modules/code/code.module';
 
 @Module({
   imports: [
@@ -20,7 +19,6 @@ import { CodeModule } from '@modules/code/code.module';
         },
       }),
     }),
-    CodeModule,
   ],
   providers: [AuthService, JwtAuthGuard],
   exports: [AuthService, JwtModule],
