@@ -1,9 +1,11 @@
 import { ProjectModule } from '@modules/project/project.module';
+import { RoleModule } from '@modules/role/role.module';
 import { TaskModule } from '@modules/task/task.module';
 import { UserModule } from '@modules/user/user.module';
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ApiErrorMiddleware } from './middleware/error-middleware';
 
 @Module({
   imports: [
@@ -30,8 +32,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     UserModule,
     ProjectModule,
     TaskModule,
+    RoleModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(ApiErrorMiddleware).forRoutes('*');
+  }
+}

@@ -34,7 +34,7 @@ export class TaskEntity extends BaseEntity {
   description: string;
 
   @ApiProperty({
-    example: UserEntity,
+    type: () => [UserEntity],
     description: 'Ответсвенный задачи',
   })
   @ManyToMany(() => UserEntity)

@@ -24,7 +24,7 @@ export class TokenEntity extends BaseEntity {
   token: string;
 
   @ApiProperty({
-    example: '3',
+    type: () => UserEntity, // Используем lazy resolver
     description: 'ID пользователя',
   })
   @ManyToOne(() => UserEntity, (user) => user.token, {

@@ -8,7 +8,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { RoleEntity } from './role.entity';
+import { RoleEntity } from '../../role/entities/role.entity';
 import { ProjectEntity } from '@modules/project/entities/project.entity';
 import { TokenEntity } from '@modules/auth/entities/token.entity';
 
