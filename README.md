@@ -45,6 +45,10 @@ POSTGRES_USER=fra1m
 POSTGRES_PASSWORD=100797
 POSTGRES_PORT=5432
 POSTGRES_DB=db_reon
+
+JWT_SECRET_SECRET=your_sercret
+JWT_REFRESH_SECRET=your_sercret_refresh
+SALT_ROUNDS=5
 ```
 
 Важно: Все переменные, которые используются в проекте, должны быть определены в файле .env.

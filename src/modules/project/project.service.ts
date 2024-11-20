@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+import { CreateProjectDto } from './dto/createProject.dto';
+import { UpdateProjectDto } from './dto/updateProject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProjectEntity } from './entities/project.entity';
 import { Repository } from 'typeorm';
@@ -12,9 +12,7 @@ export class ProjectService {
     private projectRepository: Repository<ProjectEntity>,
   ) {}
 
-  async createProject(createProjectDto: CreateProjectDto) {
-    
-  }
+  async createProject(createProjectDto: CreateProjectDto) {}
 
   findAll() {
     return `This action returns all project`;
