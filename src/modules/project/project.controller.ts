@@ -7,9 +7,9 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
-  @Post()
+  @Post('/create')
   create(@Body() createProjectDto: CreateProjectDto) {
-    return this.projectService.create(createProjectDto);
+    return this.projectService.createProject(createProjectDto);
   }
 
   @Get()

@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { RoleEntity } from './role.entity';
 import { ProjectEntity } from '@modules/project/entities/project.entity';
+import { TokenEntity } from '@modules/auth/entities/token.entity';
 
 @Entity({ name: 'users' })
 export class UserEntity extends BaseEntity {
@@ -23,6 +24,29 @@ export class UserEntity extends BaseEntity {
   })
   @Column()
   name: string;
+
+  @ApiProperty({
+    example: `user_${Math.random().toString(36).substring(7)}@example.com`,
+    description: 'Почта пользователя',
+  })
+  @Column({ unique: true, nullable: false })
+  email: string;
+
+  @ApiProperty({
+    example: 'pass123',
+    description: 'Пароль пользователя',
+    minLength: 6,
+    maxLength: 16,
+  })
+  @Column()
+  password: string;
+
+  @ApiProperty({
+    type: () => [TokenEntity],
+    description: 'Массив токенов пользователя',
+  })
+  @OneToMany(() => TokenEntity, (token) => token.userId)
+  token: TokenEntity[];
 
   @ApiProperty({
     type: () => [ProjectEntity],
