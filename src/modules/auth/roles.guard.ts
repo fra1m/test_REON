@@ -48,13 +48,6 @@ export class RolesGuard implements CanActivate {
 
       if (!token) {
         throw new HttpException(
-          'Токен отсутствует или имеет неверный формат',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-
-      if (!token) {
-        throw new HttpException(
           'Пользователь не авторизован',
           HttpStatus.UNAUTHORIZED,
         );
