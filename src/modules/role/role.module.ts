@@ -3,9 +3,10 @@ import { RoleService } from './role.service';
 import { RoleController } from './role.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoleEntity } from './entities/role.entity';
+import { AuthModule } from '@modules/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RoleEntity])],
+  imports: [AuthModule, TypeOrmModule.forFeature([RoleEntity])],
   controllers: [RoleController],
   providers: [RoleService],
   exports: [RoleService],

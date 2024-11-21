@@ -5,6 +5,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { AuthService } from '@modules/auth/auth.service';
+import { RoleService } from '@modules/role/role.service';
+import { AuthUserDto } from '@modules/auth/dto/authUser.dto';
+import { AddRoleDto } from './dto/addRole.dto';
 
 @Injectable()
 export class UserService {
@@ -12,6 +15,7 @@ export class UserService {
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
     private authService: AuthService,
+    private roleService: RoleService,
   ) {}
 
   async getUserByEmail(email: string) {
@@ -21,7 +25,22 @@ export class UserService {
 
     const user = await this.userRepository.findOne({
       where: { email },
+      relations: ['roles'],
     });
+
+    return user;
+  }
+
+  async getUserById(id: number) {
+    if (!id) {
+      return null;
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['roles'],
+    });
+
     return user;
   }
 
@@ -44,6 +63,10 @@ export class UserService {
     );
 
     const user$ = await this.userRepository.save(createUserDto);
+    const role = await this.roleService.getRoleByValue('ADMIN');
+    user$.roles = [role];
+    await this.userRepository.save(user$);
+
     const { password, ...user } = user$;
     const tokens = await this.authService.generateToken(user$);
     await this.authService.saveToken(user$, tokens.refreshToken);
@@ -51,19 +74,73 @@ export class UserService {
     return { user, tokens };
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async authUser(authUserDto: AuthUserDto) {
+    const candidate = await this.getUserByEmail(authUserDto.email);
+
+    if (!candidate) {
+      throw new HttpException(
+        'Пользователь с таким email не существует',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const user = await this.authService.auth(authUserDto, candidate);
+
+    const tokens = await this.authService.generateToken(candidate);
+    await this.authService.saveToken(user, tokens.refreshToken);
+
+    return { user, tokens };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async logount(refreshToken: string) {
+    const token = await this.authService.removeToken(refreshToken);
+
+    return token;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async getUserByToken(token: string) {
+    const token$ = await this.authService.findToken(token);
+    if (!token$) {
+      throw new HttpException('Возникла ошибка сервера', HttpStatus.NOT_FOUND);
+    }
+    const user = await this.userRepository.findOne({
+      where: { id: token$.userId.id },
+    });
+
+    return user;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async addRole(addRoleDto: AddRoleDto) {
+    const user = await this.getUserById(addRoleDto.userId);
+    const role = await this.roleService.getRoleByValue(addRoleDto.value);
+    const roleExists = user.roles.some((r) => r.value === addRoleDto.value);
+
+    if (user && role) {
+      if (!roleExists) {
+        user.roles.push(role);
+        await this.userRepository.save(user);
+        const tokens = await this.authService.generateToken(user);
+        await this.authService.saveToken(user, tokens.refreshToken);
+
+        return { user, tokens };
+      }
+      throw new HttpException(
+        `У пользователя уже есть роль ${addRoleDto.value}`,
+        HttpStatus.CONFLICT,
+      );
+    }
+    throw new HttpException(
+      'Пользователь или роль не найдены',
+      HttpStatus.NOT_FOUND,
+    );
+  }
+
+  async softDeleteUser(userId: number, refreshToken: string) {
+    await this.authService.removeToken(refreshToken);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new HttpException('Пользователь не найден', HttpStatus.NOT_FOUND);
+    }
+    await this.userRepository.softDelete(userId);
   }
 }

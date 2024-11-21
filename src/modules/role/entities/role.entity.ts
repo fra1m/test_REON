@@ -15,7 +15,7 @@ export class RoleEntity extends BaseEntity {
   value: string;
 
   @ApiProperty({
-    example: 'Админ',
+    example: 'Администратор',
     description: 'Описание роли',
   })
   @Column()

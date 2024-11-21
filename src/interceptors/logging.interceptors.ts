@@ -31,7 +31,6 @@ export class LoggingInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(() => {
         const respones = context.switchToHttp().getResponse();
-        console.log(respones.cookie['refreshToken']);
         const { statusCode } = respones;
         const contentLength = respones.get('content-length');
 

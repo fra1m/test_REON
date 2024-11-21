@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   HttpStatus,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { RoleService } from './role.service';
 import {
@@ -17,16 +18,22 @@ import {
   ApiBody,
   ApiOperation,
   ApiResponse,
+  ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateRoleDto } from './dto/createRole.dto';
 import { RoleEntity } from './entities/role.entity';
 import { LoggingInterceptor } from '@interceptors/logging.interceptors';
 import { CreateRoleBodySchema } from '@schemas/body-schemas';
-import { CreateRoleErrorSchema } from '@schemas/error-schemas';
-import { CreateRoleResponseSchema } from '@schemas/respones-schemas';
+import { CreateRoleErrorSchema, GetRolesErrorSchema } from '@schemas/error-schemas';
+import { CreateRoleResponseSchema, GetRolesResponseSchema } from '@schemas/respones-schemas';
+import { Roles } from '@modules/auth/roles-auth.decorator';
+import { RolesGuard } from '@modules/auth/roles.guard';
 
 @ApiTags('Roles CRUD')
+@ApiSecurity('RolesGuard')
+@Roles('ADMIN')
+@UseGuards(RolesGuard)
 @UseInterceptors(LoggingInterceptor)
 @Controller('roles')
 export class RoleController {
@@ -36,11 +43,11 @@ export class RoleController {
   @ApiResponse({
     status: 200,
     type: CreateRoleResponseSchema,
-    description: 'Registration user',
+    description: 'Создание роли',
   })
   @ApiBadRequestResponse({
     type: CreateRoleErrorSchema,
-    description: 'Некорректный запрос',
+    description: 'Конфликт: Указанная роль уже существует',
   })
   @ApiBody({ type: CreateRoleBodySchema })
   @Post('/create')
@@ -49,16 +56,33 @@ export class RoleController {
       const payload = await this.roleService.create(createRoleDto);
       return res
         .status(HttpStatus.OK)
-        .json({ message: 'Role was add!', ...payload });
+        .json({ message: 'Роль была создана', ...payload });
     } catch (error) {
       return res.status(error.status).json({ message: error.message });
     }
   }
 
-  @ApiOperation({ summary: 'Получение роли по значению' })
-  @ApiResponse({ status: 200, type: RoleEntity })
-  @Get('/:value')
-  findAll(@Param('value') value: string) {
-    return this.roleService.getRoleByValue(value);
+  @ApiOperation({ summary: 'Получение всех ролей' })
+  @ApiResponse({
+    status: 200,
+    type: GetRolesResponseSchema,
+    description: 'Список всех существующих ролей',
+  })
+  @ApiResponse({
+    status: 400,
+    type: GetRolesErrorSchema,
+    description: 'Ошибка получения списка ролей',
+  })
+  @Get('/all')
+  async getAllRoles(@Res() res: Response) {
+    try {
+      const payload = await this.roleService.getAllRoles();
+      return res.status(HttpStatus.OK).json({
+        message: 'Все существующие роли были супешно получены.',
+        ...payload,
+      });
+    } catch (error) {
+      return res.status(error.status).json({ message: error.message });
+    }
   }
 }

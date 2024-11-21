@@ -10,6 +10,8 @@ import {
   UseInterceptors,
   HttpStatus,
   Res,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/createUser.dto';
@@ -18,16 +20,35 @@ import { LoggingInterceptor } from '@interceptors/logging.interceptors';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiCookieAuth,
   ApiExtraModels,
   ApiOperation,
   ApiResponse,
+  ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
 import { TokenEntity } from '@modules/auth/entities/token.entity';
 import { UserEntity } from './entities/user.entity';
-import { RegistrationBodySchema } from '@schemas/body-schemas';
-import { RegistrationErrorSchema } from '@schemas/error-schemas';
-import { RegistrationResponseSchema } from '@schemas/respones-schemas';
+import { AuthBodySchema, RegistrationBodySchema } from '@schemas/body-schemas';
+import {
+  AddRoleErrorSchema,
+  AuthErrorSchema,
+  DeleteUserErrorSchema,
+  RegistrationErrorSchema,
+} from '@schemas/error-schemas';
+import {
+  AddRoleResponseSchema,
+  AuthResponseSchema,
+  DeleteUserResponseSchema,
+  RegistrationResponseSchema,
+} from '@schemas/respones-schemas';
+import { AuthUserDto } from '@modules/auth/dto/authUser.dto';
+import { Roles } from '@modules/auth/roles-auth.decorator';
+import { RolesGuard } from '@modules/auth/roles.guard';
+import { AddRoleDto } from './dto/addRole.dto';
+import { Cookies } from '@decorators/cookie.decorator';
+import { CurrentUser } from '@modules/auth/user-token.decorator';
+import { AuthGuard } from '@modules/auth/jwt-auth.guard';
 
 @ApiTags('User CRUD')
 @UseInterceptors(LoggingInterceptor)
@@ -40,7 +61,8 @@ export class UserController {
   @ApiResponse({
     status: 200,
     type: RegistrationResponseSchema,
-    description: 'Registration user',
+    description:
+      'Регистрация пользователя (выдает роль администратора автоматически)',
   })
   @ApiBadRequestResponse({
     type: RegistrationErrorSchema,
@@ -56,31 +78,112 @@ export class UserController {
         httpOnly: true,
         sameSite: 'strict',
       });
-      return res
-        .status(HttpStatus.OK)
-        .json({ message: 'Congratulations, you can job', ...payload });
+      return res.status(HttpStatus.OK).json({
+        message: 'Регистрация прошла успешно, вы можете приступить к работе!',
+        ...payload,
+      });
     } catch (error) {
       return res.status(error.status).json({ message: error.message });
     }
   }
 
-  @Get()
-  findAll() {
-    return this.userService.findAll();
+  @ApiOperation({ summary: 'Авторизация пользователя' })
+  @ApiExtraModels(UserEntity, TokenEntity, CreateUserDto)
+  @ApiResponse({
+    status: 200,
+    type: AuthResponseSchema,
+    description: 'Авторизация пользователя',
+  })
+  @ApiBadRequestResponse({
+    type: AuthErrorSchema,
+    description: 'Некорректный запрос',
+  })
+  @ApiBody({ type: AuthBodySchema })
+  @Post('/auth')
+  async authUser(@Body() userDto: AuthUserDto, @Res() res: Response) {
+    try {
+      const payload = await this.userService.authUser(userDto);
+      res.cookie('refreshToken', payload.tokens.refreshToken, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+      });
+      return res.status(HttpStatus.OK).json({
+        message: 'Авторизация прошла успешно, вы можете приступить к работе!',
+        ...payload,
+      });
+    } catch (error) {
+      return res.status(error.status).json({ message: error.message });
+    }
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  @ApiOperation({ summary: 'Добавление роль (только для администратора)' })
+  @ApiResponse({
+    status: 200,
+    type: AddRoleResponseSchema,
+    description: 'Добавление роли пользователю',
+  })
+  @ApiResponse({
+    status: 409,
+    type: AddRoleErrorSchema,
+    description: 'Конфликт: У пользователя уже есть указанная роль',
+  })
+  @ApiSecurity('RolesGuard')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Post('/add-role')
+  async addRole(
+    @Cookies('refreshToken') token: string,
+    @Body() addRoleDto: AddRoleDto,
+    @Res() res: Response,
+  ) {
+    try {
+      const payload = await this.userService.addRole(addRoleDto);
+      res.cookie('refreshToken', payload.tokens.refreshToken, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+      });
+
+      return res.status(HttpStatus.OK).json({
+        message: 'Роль была добавлена пользователю успешно!',
+        ...payload,
+      });
+    } catch (error) {
+      return res.status(error.status).json({ message: error.message });
+    }
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
-  }
+  @ApiOperation({ summary: 'Удаление пользователя (архивация)' })
+  @ApiResponse({
+    status: 200,
+    type: DeleteUserResponseSchema,
+    description: 'Пользователь успешно удалён',
+  })
+  @ApiBadRequestResponse({
+    type: DeleteUserErrorSchema,
+    description: 'Пользователь уже удален',
+  })
+  @ApiCookieAuth('refreshToken')
+  @ApiSecurity('AuthGuard')
+  @UseGuards(AuthGuard)
+  @Delete('/delete')
+  async softDeleteUser(
+    @Cookies('refreshToken') token: string,
+    @Res() res: Response,
+    @CurrentUser() user: UserEntity,
+  ) {
+    try {
+      await this.userService.softDeleteUser(user.id, token);
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+      const { iat, exp, ...filteredUser } = user as any;
+
+      return res
+        .status(HttpStatus.OK)
+        .clearCookie('refreshToken')
+        .json({ message: 'Пользователь успешно удалён', user: filteredUser });
+    } catch (error) {
+      return res
+        .status(error.status || HttpStatus.BAD_REQUEST)
+        .json({ message: error.message });
+    }
   }
 }

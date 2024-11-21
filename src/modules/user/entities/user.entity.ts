@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   BaseEntity,
   Column,
+  DeleteDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
@@ -40,6 +41,15 @@ export class UserEntity extends BaseEntity {
   })
   @Column()
   password: string;
+
+  @DeleteDateColumn({
+    type: 'timestamp',
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
+    select: false,
+    nullable: true,
+  })
+  deletedAt: Date | null;
 
   @ApiProperty({
     type: () => [TokenEntity],

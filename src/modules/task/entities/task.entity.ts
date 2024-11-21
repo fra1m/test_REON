@@ -55,7 +55,13 @@ export class TaskEntity extends BaseEntity {
     example: '2024-06-15 17:00:00',
     description: 'Дедлайн задачи',
   })
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({
+    type: 'timestamp',
+    precision: 0,
+    default: () => 'CURRENT_TIMESTAMP',
+    select: false,
+    nullable: true,
+  })
   deadline: Date;
 
   @ApiProperty({
