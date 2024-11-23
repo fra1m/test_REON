@@ -6,11 +6,12 @@ import {
   ManyToOne,
   CreateDateColumn,
   JoinColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserEntity } from '@modules/user/entities/user.entity';
 
-@Entity({ name: 'token' })
+@Entity({ name: 'tokens' })
 export class TokenEntity extends BaseEntity {
   @ApiProperty({ example: '1', description: 'Уникальный идентификатор токена' })
   @PrimaryGeneratedColumn()
@@ -44,4 +45,15 @@ export class TokenEntity extends BaseEntity {
     select: false,
   })
   createdAt: Date;
+
+  @ApiProperty({
+    example: '2024-06-01 10:30:00',
+    description: 'Дата последнего обновления токена',
+  })
+  @UpdateDateColumn({
+    type: 'timestamp',
+    precision: 0,
+    select: false,
+  })
+  updatedAt: Date;
 }

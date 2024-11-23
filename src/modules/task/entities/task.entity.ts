@@ -13,7 +13,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity({ name: 'task' })
+@Entity({ name: 'tasks' })
 export class TaskEntity extends BaseEntity {
   @ApiProperty({ example: '1', description: 'Уникальный идентификатор' })
   @PrimaryGeneratedColumn()
@@ -35,11 +35,11 @@ export class TaskEntity extends BaseEntity {
 
   @ApiProperty({
     type: () => [UserEntity],
-    description: 'Ответсвенный задачи',
+    description: 'Ответсвенные за задачу',
   })
-  @ManyToMany(() => UserEntity)
+  @ManyToMany(() => UserEntity, { cascade: true })
   @JoinTable({
-    name: 'task_users',
+    name: 'tasks_users',
     joinColumn: {
       name: 'task_id',
       referencedColumnName: 'id',
@@ -49,7 +49,7 @@ export class TaskEntity extends BaseEntity {
       referencedColumnName: 'id',
     },
   })
-  responsible: UserEntity[];
+  responsibles: UserEntity[];
 
   @ApiProperty({
     example: '2024-06-15 17:00:00',
@@ -75,6 +75,6 @@ export class TaskEntity extends BaseEntity {
     type: () => ProjectEntity,
     description: 'Проект, к которому относится задача',
   })
-  @ManyToOne(() => ProjectEntity, (project) => project.task)
+  @ManyToOne(() => ProjectEntity, (project) => project.tasks)
   project: ProjectEntity;
 }

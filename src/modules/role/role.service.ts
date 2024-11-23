@@ -22,7 +22,6 @@ export class RoleService {
       role.description = 'Администратор';
       await this.roleRepository.save(role);
     }
-    console.log('Успешно!')
   }
 
   async create(createRoleDto: CreateRoleDto) {

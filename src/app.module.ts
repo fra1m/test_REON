@@ -26,7 +26,7 @@ import { ApiErrorMiddleware } from './middleware/error-middleware';
         database: configService.get('POSTGRES_DB'),
         autoLoadEntities: true,
         synchronize: true,
-        logging: true,
+        // logging: true,
       }),
     }),
     UserModule,

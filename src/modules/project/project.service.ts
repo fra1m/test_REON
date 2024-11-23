@@ -1,32 +1,97 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateProjectDto } from './dto/createProject.dto';
 import { UpdateProjectDto } from './dto/updateProject.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProjectEntity } from './entities/project.entity';
 import { Repository } from 'typeorm';
+import { AuthService } from '@modules/auth/auth.service';
+import { UserService } from '@modules/user/user.service';
+import { AddUserForProjectDto } from './dto/addUserForProject.dto';
 
 @Injectable()
 export class ProjectService {
   constructor(
     @InjectRepository(ProjectEntity)
     private projectRepository: Repository<ProjectEntity>,
+    private authService: AuthService,
+    private userService: UserService,
   ) {}
 
-  async createProject(createProjectDto: CreateProjectDto) {}
+  async createProject(createProjectDto: CreateProjectDto) {
+    const project = await this.projectRepository.save(createProjectDto);
 
-  findAll() {
-    return `This action returns all project`;
+    const tokens = await this.authService.generateToken(
+      createProjectDto.author,
+    );
+
+    await this.authService.saveToken(
+      createProjectDto.author,
+      tokens.refreshToken,
+    );
+
+    return { project, tokens };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} project`;
+  async getProjectById(id: number) {
+    if (!id) {
+      return null;
+    }
+
+    const project = await this.projectRepository.findOne({
+      where: { id },
+      relations: ['users'],
+    });
+    if (!project) {
+      throw new HttpException('Проект не найден', HttpStatus.BAD_REQUEST);
+    }
+
+    return project;
   }
 
-  update(id: number, updateProjectDto: UpdateProjectDto) {
-    return `This action updates a #${id} project`;
+  async addUserForProject(
+    addUserForProjectDto: AddUserForProjectDto,
+    project_id: number,
+  ) {
+    const project = await this.getProjectById(project_id);
+
+    if (
+      project.users.some((user: any) => user.id === addUserForProjectDto.userId)
+    ) {
+      throw new HttpException(
+        'Пользователь уже добавлен',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const user = await this.userService.getUserById(
+      addUserForProjectDto.userId,
+    );
+
+    project.users.push(user);
+    await this.projectRepository.save(project);
+
+    return { project };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} project`;
+  async patch(updateProjectDto: UpdateProjectDto, project_id: number) {
+    const project = await this.getProjectById(project_id);
+
+    const changes: Record<string, { oldValue: string; newValue: string }> = {};
+
+    for (const [key, value] of Object.entries(updateProjectDto)) {
+      if (value !== undefined && project[key] !== value) {
+        changes[key] = { oldValue: project[key], newValue: value };
+        project[key] = value;
+      }
+    }
+    await this.projectRepository.save(project);
+
+    return { project, changes };
+  }
+
+  async softDeleteProject(projectId: number) {
+    const project = await this.getProjectById(projectId);
+    await this.projectRepository.softDelete(project.id);
+    return { project };
   }
 }

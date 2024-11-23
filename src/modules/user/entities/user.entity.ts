@@ -45,7 +45,6 @@ export class UserEntity extends BaseEntity {
   @DeleteDateColumn({
     type: 'timestamp',
     precision: 0,
-    default: () => 'CURRENT_TIMESTAMP',
     select: false,
     nullable: true,
   })
@@ -62,17 +61,16 @@ export class UserEntity extends BaseEntity {
     type: () => [ProjectEntity],
     description: 'Массив созданных проектов',
   })
-  @OneToMany(() => ProjectEntity, (project) => project.author, {
+  @OneToMany(() => ProjectEntity, (projects) => projects.author, {
     cascade: true,
-    eager: true,
   })
-  project: ProjectEntity[];
+  projects: ProjectEntity[];
 
   @ApiProperty({
     type: () => [RoleEntity],
     description: 'Роли, назначенные пользователю',
   })
-  @ManyToMany(() => RoleEntity, { cascade: true })
+  @ManyToMany(() => RoleEntity, { cascade: true, eager: true })
   @JoinTable({
     name: 'user_roles',
     joinColumn: {

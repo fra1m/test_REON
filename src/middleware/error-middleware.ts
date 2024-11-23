@@ -18,7 +18,7 @@ export class ApiErrorMiddleware implements NestMiddleware {
 
     if (!res) {
       const error = new HttpException(
-        'Ваше сообщение об ошибке',
+        'Ошибка сервера',
         HttpStatus.BAD_REQUEST,
       );
       this.logger.error(req.errored);

@@ -8,14 +8,14 @@ export class RoleEntity extends BaseEntity {
   id: number;
 
   @ApiProperty({
-    example: 'ADMIN',
+    example: 'USER',
     description: 'Уникальное значение роли',
   })
   @Column({ unique: true })
   value: string;
 
   @ApiProperty({
-    example: 'Администратор',
+    example: 'Сотрудник',
     description: 'Описание роли',
   })
   @Column()

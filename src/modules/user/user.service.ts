@@ -41,6 +41,22 @@ export class UserService {
       relations: ['roles'],
     });
 
+    if (!user) {
+      throw new HttpException('Пользователь не найден', HttpStatus.BAD_REQUEST);
+    }
+
+    return user;
+  }
+
+  async getUserByToken(token: string) {
+    const token$ = await this.authService.findToken(token);
+    if (!token$) {
+      throw new HttpException('Возникла ошибка сервера', HttpStatus.NOT_FOUND);
+    }
+    const user = await this.userRepository.findOne({
+      where: { id: token$.userId.id },
+    });
+
     return user;
   }
 
@@ -84,10 +100,39 @@ export class UserService {
       );
     }
 
-    const user = await this.authService.auth(authUserDto, candidate);
+    const user$ = await this.authService.auth(authUserDto, candidate);
+    const { password, ...user } = user$;
 
-    const tokens = await this.authService.generateToken(candidate);
-    await this.authService.saveToken(user, tokens.refreshToken);
+    const tokens = await this.authService.generateToken(user$);
+    await this.authService.saveToken(user$, tokens.refreshToken);
+
+    return { user, tokens };
+  }
+
+  async refreshToken(refreshToken: string) {
+    if (!refreshToken) {
+      throw new HttpException(
+        'Пользователь не авторизован',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const userData = await this.authService.validateRefreshToken(refreshToken);
+
+    const tokenFromDb = await this.authService.findToken(refreshToken);
+
+    if (!userData || !tokenFromDb) {
+      throw new HttpException(
+        'Пользователь не авторизован',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const user$ = await this.getUserById(userData.id);
+    const { password, ...user } = user$;
+
+    const tokens = await this.authService.generateToken(user$);
+    await this.authService.saveToken(user$, tokens.refreshToken);
 
     return { user, tokens };
   }
@@ -98,29 +143,19 @@ export class UserService {
     return token;
   }
 
-  async getUserByToken(token: string) {
-    const token$ = await this.authService.findToken(token);
-    if (!token$) {
-      throw new HttpException('Возникла ошибка сервера', HttpStatus.NOT_FOUND);
-    }
-    const user = await this.userRepository.findOne({
-      where: { id: token$.userId.id },
-    });
-
-    return user;
-  }
-
   async addRole(addRoleDto: AddRoleDto) {
-    const user = await this.getUserById(addRoleDto.userId);
+    const user$ = await this.getUserById(addRoleDto.userId);
     const role = await this.roleService.getRoleByValue(addRoleDto.value);
-    const roleExists = user.roles.some((r) => r.value === addRoleDto.value);
+    const roleExists = user$.roles.some((r) => r.value === addRoleDto.value);
 
-    if (user && role) {
+    if (user$ && role) {
       if (!roleExists) {
-        user.roles.push(role);
-        await this.userRepository.save(user);
-        const tokens = await this.authService.generateToken(user);
-        await this.authService.saveToken(user, tokens.refreshToken);
+        user$.roles.push(role);
+        await this.userRepository.save(user$);
+        const { password, ...user } = user$;
+
+        const tokens = await this.authService.generateToken(user$);
+        await this.authService.saveToken(user$, tokens.refreshToken);
 
         return { user, tokens };
       }
@@ -137,10 +172,8 @@ export class UserService {
 
   async softDeleteUser(userId: number, refreshToken: string) {
     await this.authService.removeToken(refreshToken);
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new HttpException('Пользователь не найден', HttpStatus.NOT_FOUND);
-    }
-    await this.userRepository.softDelete(userId);
+    const user = await this.getUserById(userId);
+
+    await this.userRepository.softDelete(user.id);
   }
 }

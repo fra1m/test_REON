@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from './pipes/validation.pipe';
 import * as cookieParser from 'cookie-parser';
+import { swaggerDescription } from './swagger/swagger-description';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,7 +15,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('RESTful API для управления к API REON')
-    .setDescription('Документация по REST API')
+    .setDescription(swaggerDescription)
     .setVersion('1.0.0')
     .build();
 

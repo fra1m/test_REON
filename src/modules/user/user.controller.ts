@@ -40,6 +40,7 @@ import {
   AddRoleResponseSchema,
   AuthResponseSchema,
   DeleteUserResponseSchema,
+  RefreshTokenResponseSchema,
   RegistrationResponseSchema,
 } from '@schemas/respones-schemas';
 import { AuthUserDto } from '@modules/auth/dto/authUser.dto';
@@ -56,7 +57,7 @@ import { AuthGuard } from '@modules/auth/jwt-auth.guard';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @ApiOperation({ summary: 'Cоздание пользователя', operationId: '1' })
+  @ApiOperation({ summary: 'Cоздание пользователя' })
   @ApiExtraModels(UserEntity, TokenEntity, CreateUserDto)
   @ApiResponse({
     status: 200,
@@ -107,10 +108,30 @@ export class UserController {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         httpOnly: true,
       });
+
       return res.status(HttpStatus.OK).json({
         message: 'Авторизация прошла успешно, вы можете приступить к работе!',
         ...payload,
       });
+    } catch (error) {
+      return res.status(error.status).json({ message: error.message });
+    }
+  }
+
+  @ApiCookieAuth('refreshToken')
+  @ApiOperation({ summary: 'Обновление refreshToken в cookies' })
+  @ApiResponse({ status: 200, type: RefreshTokenResponseSchema })
+  @Get('/refresh')
+  async refresh(@Cookies('refreshToken') token: string, @Res() res: Response) {
+    try {
+      const payload = await this.userService.refreshToken(token);
+      res.cookie('refreshToken', payload.tokens.refreshToken, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+      });
+      return res
+        .status(HttpStatus.OK)
+        .json({ message: 'Congratulations, you can play', ...payload });
     } catch (error) {
       return res.status(error.status).json({ message: error.message });
     }
@@ -131,11 +152,7 @@ export class UserController {
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   @Post('/add-role')
-  async addRole(
-    @Cookies('refreshToken') token: string,
-    @Body() addRoleDto: AddRoleDto,
-    @Res() res: Response,
-  ) {
+  async addRole(@Body() addRoleDto: AddRoleDto, @Res() res: Response) {
     try {
       const payload = await this.userService.addRole(addRoleDto);
       res.cookie('refreshToken', payload.tokens.refreshToken, {
@@ -174,16 +191,12 @@ export class UserController {
     try {
       await this.userService.softDeleteUser(user.id, token);
 
-      const { iat, exp, ...filteredUser } = user as any;
-
       return res
         .status(HttpStatus.OK)
         .clearCookie('refreshToken')
-        .json({ message: 'Пользователь успешно удалён', user: filteredUser });
+        .json({ message: 'Пользователь успешно удалён', user });
     } catch (error) {
-      return res
-        .status(error.status || HttpStatus.BAD_REQUEST)
-        .json({ message: error.message });
+      return res.status(error.status).json({ message: error.message });
     }
   }
 }

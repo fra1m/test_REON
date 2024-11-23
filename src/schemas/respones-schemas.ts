@@ -1,9 +1,10 @@
 import { TokenEntity } from '@modules/auth/entities/token.entity';
+import { ProjectEntity } from '@modules/project/entities/project.entity';
 import { RoleEntity } from '@modules/role/entities/role.entity';
 import { UserEntity } from '@modules/user/entities/user.entity';
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 
-export class Tokens {
+class Tokens {
   @ApiProperty({
     type: String,
     description: 'Access токен',
@@ -19,6 +20,17 @@ export class Tokens {
   refreshToken: string;
 }
 
+class UserWithoutPrivateFields extends OmitType(UserEntity, [
+  'password',
+  'token',
+  'projects',
+] as const) {}
+
+class CreateProjectWithoutRelations extends OmitType(ProjectEntity, [
+  'users',
+  'tasks',
+] as const) {}
+
 class RegistrationResponseSchema {
   @ApiProperty({
     type: 'string',
@@ -28,7 +40,7 @@ class RegistrationResponseSchema {
   message: string;
 
   @ApiProperty({
-    type: OmitType(UserEntity, ['password', 'token', 'project'] as const),
+    type: OmitType(UserEntity, ['password', 'token', 'projects'] as const),
     description: 'Информация о пользователе (без пароля и приватных полей)',
   })
   user: UserEntity;
@@ -49,7 +61,7 @@ class AuthResponseSchema {
   message: string;
 
   @ApiProperty({
-    type: OmitType(UserEntity, ['password', 'token'] as const),
+    type: UserWithoutPrivateFields,
     description: 'Информация о пользователе (без пароля и приватных полей)',
   })
   user: UserEntity;
@@ -61,6 +73,8 @@ class AuthResponseSchema {
   tokens: Tokens;
 }
 
+class RefreshTokenResponseSchema extends AuthResponseSchema {}
+
 class DeleteUserResponseSchema {
   @ApiProperty({
     type: 'string',
@@ -70,19 +84,27 @@ class DeleteUserResponseSchema {
   message: string;
 
   @ApiProperty({
-    type: OmitType(UserEntity, ['password', 'token'] as const),
+    type: UserWithoutPrivateFields,
     description: 'Информация о пользователе (без пароля и приватных полей)',
   })
   user: UserEntity;
 }
 
 class CreateRoleResponseSchema {
-  @ApiProperty({ example: 'ADMIN', description: 'Значение ролей' })
-  value: string;
+  @ApiProperty({
+    type: 'string',
+    example: 'Роль была создана',
+    description: 'Сообщение о результате операции',
+  })
+  message: string;
 
-  @ApiProperty({ example: 'Роль админ', description: 'Описание значения' })
-  description: string;
+  @ApiProperty({
+    type: () => RoleEntity,
+    description: 'Сущность роль',
+  })
+  roles: RoleEntity;
 }
+
 class AddRoleResponseSchema {
   @ApiProperty({
     type: 'string',
@@ -92,10 +114,11 @@ class AddRoleResponseSchema {
   message: string;
 
   @ApiProperty({
-    type: OmitType(UserEntity, ['password', 'token'] as const),
+    type: UserWithoutPrivateFields,
     description: 'Информация о пользователе (без пароля и приватных полей)',
   })
   user: UserEntity;
+
   @ApiProperty({
     type: Tokens,
     description: 'Объект, содержащий токены (access и refresh)',
@@ -118,6 +141,51 @@ class GetRolesResponseSchema {
   roles: RoleEntity[];
 }
 
+class CreateProjectResponseSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Проект был создан',
+    description: 'Сообщение о результате операции',
+  })
+  message: string;
+
+  @ApiProperty({
+    type: CreateProjectWithoutRelations,
+    description: 'Сущность проект',
+  })
+  project: ProjectEntity;
+}
+
+class AddUserForProjectResponseSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Пользователь успешно добавлен к задаче',
+    description: 'Сообщение о результате операции',
+  })
+  message: string;
+
+  @ApiProperty({
+    type: CreateProjectWithoutRelations,
+    description: 'Сущность проект',
+  })
+  project: ProjectEntity;
+}
+
+class UpdateProjectResponseSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Измененные поля: name, description',
+    description: 'Сообщение о результате операции',
+  })
+  message: string;
+
+  @ApiProperty({
+    type: CreateProjectWithoutRelations,
+    description: 'Сущность проект',
+  })
+  project: ProjectEntity;
+}
+
 export {
   AuthResponseSchema,
   RegistrationResponseSchema,
@@ -125,4 +193,8 @@ export {
   AddRoleResponseSchema,
   GetRolesResponseSchema,
   DeleteUserResponseSchema,
+  RefreshTokenResponseSchema,
+  CreateProjectResponseSchema,
+  AddUserForProjectResponseSchema,
+  UpdateProjectResponseSchema,
 };

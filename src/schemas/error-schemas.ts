@@ -13,7 +13,7 @@ class AuthErrorSchema {
   @ApiProperty({
     type: 'string',
     example: 'Пользователь с таким email не существует',
-    description: 'Сообщение об ошибке при регистрации',
+    description: 'Сообщение об ошибке при авторизации',
   })
   message: string;
 }
@@ -40,7 +40,7 @@ class AddRoleErrorSchema {
   @ApiProperty({
     type: 'string',
     example: 'У пользователя уже есть роль USER',
-    description: 'Сообщение об ошибке при регистрации',
+    description: 'Сообщение об ошибке добавление роли',
   })
   message: string;
 }
@@ -54,6 +54,33 @@ class GetRolesErrorSchema {
   message: string;
 }
 
+class CreateProjectErrorSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'У вас нет доступа!',
+    description: 'Сообщение об ошибке при создании проекта',
+  })
+  message: string;
+}
+
+class AddUserForProjectErrorSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Пользователь уже добавлен',
+    description: 'Сообщение об ошибке при добавление пользователя в проект',
+  })
+  message: string;
+}
+
+class UpdateProjectErrorSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'У вас нет доступа!',
+    description: 'Сообщение об ошибке при изменении проекта',
+  })
+  message: string;
+}
+
 export {
   AuthErrorSchema,
   AddRoleErrorSchema,
@@ -61,4 +88,7 @@ export {
   RegistrationErrorSchema,
   CreateRoleErrorSchema,
   DeleteUserErrorSchema,
+  CreateProjectErrorSchema,
+  AddUserForProjectErrorSchema,
+  UpdateProjectErrorSchema,
 };

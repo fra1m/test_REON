@@ -5,6 +5,7 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
@@ -15,7 +16,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'project' })
+@Entity({ name: 'projects' })
 export class ProjectEntity extends BaseEntity {
   @ApiProperty({ example: '1', description: 'Уникальный идентификатор' })
   @PrimaryGeneratedColumn()
@@ -54,26 +55,33 @@ export class ProjectEntity extends BaseEntity {
   @UpdateDateColumn({
     type: 'timestamp',
     precision: 0,
-    default: () => 'CURRENT_TIMESTAMP',
     select: false,
   })
   updatedAt: Date;
 
   @ApiProperty({
-    type: () => UserEntity,
+    example: () => UserEntity,
     description: 'Создатель проекта',
   })
-  @ManyToOne(() => UserEntity, (user) => user.project)
-  @JoinColumn({ name: 'user_id' })
+  @ManyToOne(() => UserEntity, (user) => user.projects)
+  @JoinColumn({ name: 'author_id' })
   author: UserEntity;
+
+  @DeleteDateColumn({
+    type: 'timestamp',
+    precision: 0,
+    select: false,
+    nullable: true,
+  })
+  deletedAt: Date | null;
 
   @ApiProperty({
     type: () => [UserEntity],
-    description: 'Множество сотрудников у проекта',
+    description: 'Массив сотрудников у проекта',
   })
-  @ManyToMany(() => UserEntity, { cascade: true })
+  @ManyToMany(() => UserEntity, { cascade: true, eager: true })
   @JoinTable({
-    name: 'project_users', 
+    name: 'projects_users',
     joinColumn: {
       name: 'project_id',
       referencedColumnName: 'id',
@@ -87,11 +95,11 @@ export class ProjectEntity extends BaseEntity {
 
   @ApiProperty({
     type: () => [TaskEntity],
-    description: 'Список задач, связанных с проектом',
+    description: 'Массив задач, связанных с проектом',
   })
   @OneToMany(() => TaskEntity, (task) => task.project, {
     cascade: true,
     eager: true,
   })
-  task: TaskEntity[];
+  tasks: TaskEntity[];
 }

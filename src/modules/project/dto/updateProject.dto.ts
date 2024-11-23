@@ -1,4 +1,18 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateProjectDto } from './createProject.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString } from 'class-validator';
 
-export class UpdateProjectDto extends PartialType(CreateProjectDto) {}
+export class UpdateProjectDto {
+  @ApiProperty({
+    example: 'TEST Project',
+    description: 'Имя проекта',
+  })
+  @IsString({ message: 'Должно быть строкой' })
+  name?: string;
+
+  @ApiProperty({
+    example: 'Это тестовый проект',
+    description: 'Описание проекта',
+  })
+  @IsString({ message: 'Должно быть строкой' })
+  description?: string;
+}

@@ -39,7 +39,7 @@ export class RolesGuard implements CanActivate {
 
       if (!cookie) {
         throw new HttpException(
-          'Отсутствует заголовок Cookie',
+          'Отсутствует заголовок Cookie!',
           HttpStatus.UNAUTHORIZED,
         );
       }
@@ -48,7 +48,7 @@ export class RolesGuard implements CanActivate {
 
       if (!token) {
         throw new HttpException(
-          'Пользователь не авторизован',
+          'Пользователь не авторизован!',
           HttpStatus.UNAUTHORIZED,
         );
       }
@@ -62,12 +62,12 @@ export class RolesGuard implements CanActivate {
         user.roles.some((role: any) => requareRoles.includes(role.value)) ===
         false
       ) {
-        throw new Error();
+        throw new HttpException('У вас нет доступа!', HttpStatus.FORBIDDEN);
       }
 
       return true;
-    } catch (e) {
-      throw new HttpException('У вас нет доступа', HttpStatus.FORBIDDEN);
+    } catch (err) {
+      throw err;
     }
   }
 

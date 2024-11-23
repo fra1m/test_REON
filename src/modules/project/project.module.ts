@@ -1,11 +1,13 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { ProjectController } from './project.controller';
 import { ProjectEntity } from './entities/project.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from '@modules/auth/auth.module';
+import { UserModule } from '@modules/user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ProjectEntity])],
+  imports: [UserModule, AuthModule, TypeOrmModule.forFeature([ProjectEntity])],
   controllers: [ProjectController],
   providers: [ProjectService],
 })

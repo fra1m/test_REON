@@ -1,4 +1,4 @@
-import { RoleEntity } from '@modules/role/entities/role.entity';
+import { UpdateProjectDto } from '@modules/project/dto/updateProject.dto';
 import { UserEntity } from '@modules/user/entities/user.entity';
 import { PickType } from '@nestjs/swagger';
 
@@ -12,10 +12,9 @@ class AuthBodySchema extends PickType(UserEntity, [
   'email',
   'password',
 ] as const) {}
-
-class CreateRoleBodySchema extends PickType(RoleEntity, [
-  'value',
+class CreateProjectBodySchema extends PickType(UpdateProjectDto, [
+  'name',
   'description',
 ] as const) {}
 
-export { AuthBodySchema, RegistrationBodySchema, CreateRoleBodySchema };
+export { CreateProjectBodySchema, AuthBodySchema, RegistrationBodySchema };

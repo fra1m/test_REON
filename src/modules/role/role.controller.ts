@@ -4,9 +4,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
   UseInterceptors,
   HttpStatus,
   Res,
@@ -24,7 +21,6 @@ import {
 import { CreateRoleDto } from './dto/createRole.dto';
 import { RoleEntity } from './entities/role.entity';
 import { LoggingInterceptor } from '@interceptors/logging.interceptors';
-import { CreateRoleBodySchema } from '@schemas/body-schemas';
 import { CreateRoleErrorSchema, GetRolesErrorSchema } from '@schemas/error-schemas';
 import { CreateRoleResponseSchema, GetRolesResponseSchema } from '@schemas/respones-schemas';
 import { Roles } from '@modules/auth/roles-auth.decorator';
@@ -49,7 +45,7 @@ export class RoleController {
     type: CreateRoleErrorSchema,
     description: 'Конфликт: Указанная роль уже существует',
   })
-  @ApiBody({ type: CreateRoleBodySchema })
+  @ApiBody({ type: CreateRoleDto })
   @Post('/create')
   async create(@Body() createRoleDto: CreateRoleDto, @Res() res: Response) {
     try {
