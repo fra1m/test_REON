@@ -31,6 +31,11 @@ class CreateProjectWithoutRelations extends OmitType(ProjectEntity, [
   'tasks',
 ] as const) {}
 
+class RemoveUserForProjectWithoutRelations extends OmitType(ProjectEntity, [
+  'tasks',
+  'author',
+] as const) {}
+
 class RegistrationResponseSchema {
   @ApiProperty({
     type: 'string',
@@ -169,6 +174,48 @@ class AddUserForProjectResponseSchema {
     description: 'Сущность проект',
   })
   project: ProjectEntity;
+
+  @ApiProperty({
+    type: UserWithoutPrivateFields,
+    description: 'Информация о пользователе (без пароля и приватных полей)',
+  })
+  user: UserEntity;
+}
+
+class RemoveUserForProjectResponseSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Пользователь успешно удален',
+    description: 'Сообщение о результате операции',
+  })
+  message: string;
+
+  @ApiProperty({
+    type: RemoveUserForProjectWithoutRelations,
+    description: 'Сущность проект',
+  })
+  project: ProjectEntity;
+
+  @ApiProperty({
+    type: UserWithoutPrivateFields,
+    description: 'Информация о пользователе (без пароля и приватных полей)',
+  })
+  user: UserEntity;
+}
+
+class DeleteForProjectResponseSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Проект успешно удален',
+    description: 'Сообщение о результате операции',
+  })
+  message: string;
+
+  @ApiProperty({
+    type: RemoveUserForProjectWithoutRelations,
+    description: 'Сущность проект',
+  })
+  project: ProjectEntity;
 }
 
 class UpdateProjectResponseSchema {
@@ -196,5 +243,7 @@ export {
   RefreshTokenResponseSchema,
   CreateProjectResponseSchema,
   AddUserForProjectResponseSchema,
+  RemoveUserForProjectResponseSchema,
   UpdateProjectResponseSchema,
+  DeleteForProjectResponseSchema,
 };

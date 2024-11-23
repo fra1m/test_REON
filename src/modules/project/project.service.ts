@@ -6,7 +6,7 @@ import { ProjectEntity } from './entities/project.entity';
 import { Repository } from 'typeorm';
 import { AuthService } from '@modules/auth/auth.service';
 import { UserService } from '@modules/user/user.service';
-import { AddUserForProjectDto } from './dto/addUserForProject.dto';
+import { UserForProjectDto } from './dto/addUserForProject.dto';
 
 @Injectable()
 export class ProjectService {
@@ -49,7 +49,7 @@ export class ProjectService {
   }
 
   async addUserForProject(
-    addUserForProjectDto: AddUserForProjectDto,
+    addUserForProjectDto: UserForProjectDto,
     project_id: number,
   ) {
     const project = await this.getProjectById(project_id);
@@ -70,7 +70,37 @@ export class ProjectService {
     project.users.push(user);
     await this.projectRepository.save(project);
 
-    return { project };
+    return { project, user };
+  }
+
+  async removeUserForProject(
+    removeUserForProjectDto: UserForProjectDto,
+    project_id: number,
+  ) {
+    const project = await this.getProjectById(project_id);
+
+    if (
+      !project.users.some(
+        (user: any) => user.id === removeUserForProjectDto.userId,
+      )
+    ) {
+      throw new HttpException(
+        'Пользователь уже удален',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const user = await this.userService.getUserById(
+      removeUserForProjectDto.userId,
+    );
+
+    project.users = project.users.filter(
+      (user) => user.id !== removeUserForProjectDto.userId,
+    );
+
+    await this.projectRepository.save(project);
+
+    return { project, user };
   }
 
   async patch(updateProjectDto: UpdateProjectDto, project_id: number) {

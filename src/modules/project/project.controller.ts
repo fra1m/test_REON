@@ -33,6 +33,9 @@ import { RolesGuard } from '@modules/auth/roles.guard';
 import {
   AddUserForProjectResponseSchema,
   CreateProjectResponseSchema,
+  DeleteForProjectResponseSchema,
+  DeleteUserResponseSchema,
+  RemoveUserForProjectResponseSchema,
   UpdateProjectResponseSchema,
 } from '@schemas/respones-schemas';
 import { CurrentUser } from '@modules/auth/user-token.decorator';
@@ -40,9 +43,12 @@ import { UpdateProjectDto } from './dto/updateProject.dto';
 import {
   AddUserForProjectErrorSchema,
   CreateProjectErrorSchema,
+  DeleteProjectErrorSchema,
+  DeleteUserErrorSchema,
+  RemoveUserForProjectErrorSchema,
   UpdateProjectErrorSchema,
 } from '@schemas/error-schemas';
-import { AddUserForProjectDto } from './dto/addUserForProject.dto';
+import { UserForProjectDto } from './dto/addUserForProject.dto';
 
 @ApiTags('Project CRUD')
 @ApiSecurity('RolesGuard')
@@ -90,7 +96,7 @@ export class ProjectController {
   }
 
   @ApiOperation({ summary: 'Добавление пользователя в проект (Администратор)' })
-  @ApiExtraModels(UserEntity, ProjectEntity, TokenEntity, AddUserForProjectDto)
+  @ApiExtraModels(UserEntity, ProjectEntity, TokenEntity, UserForProjectDto)
   @ApiResponse({
     status: 200,
     type: AddUserForProjectResponseSchema,
@@ -100,12 +106,12 @@ export class ProjectController {
     type: AddUserForProjectErrorSchema,
     description: 'Некорректный запрос',
   })
-  @ApiBody({ type: AddUserForProjectDto })
+  @ApiBody({ type: UserForProjectDto })
   @ApiCookieAuth('refreshToken')
   @Patch(':id/add-user')
   async addUser(
     @Param('id') id: number,
-    @Body() addUserForProjectDto: AddUserForProjectDto,
+    @Body() addUserForProjectDto: UserForProjectDto,
     @Res() res: Response,
   ) {
     try {
@@ -116,6 +122,40 @@ export class ProjectController {
 
       return res.status(HttpStatus.OK).json({
         message: 'Пользователь успешно добавлен к задаче',
+        ...payload,
+      });
+    } catch (error) {
+      return res.status(error.status).json({ message: error.message });
+    }
+  }
+
+  @ApiOperation({ summary: 'Удаление пользователя из проекта (Администратор)' })
+  @ApiExtraModels(UserEntity, ProjectEntity, TokenEntity, UserForProjectDto)
+  @ApiResponse({
+    status: 200,
+    type: RemoveUserForProjectResponseSchema,
+    description: 'Удаление пользователя из проекта',
+  })
+  @ApiBadRequestResponse({
+    type: RemoveUserForProjectErrorSchema,
+    description: 'Некорректный запрос',
+  })
+  @ApiBody({ type: UserForProjectDto })
+  @ApiCookieAuth('refreshToken')
+  @Patch(':id/remove-user')
+  async removeUser(
+    @Param('id') id: number,
+    @Body() addUserForProjectDto: UserForProjectDto,
+    @Res() res: Response,
+  ) {
+    try {
+      const payload = await this.projectService.removeUserForProject(
+        addUserForProjectDto,
+        id,
+      );
+
+      return res.status(HttpStatus.OK).json({
+        message: 'Пользователь успешно удален',
         ...payload,
       });
     } catch (error) {
@@ -162,15 +202,15 @@ export class ProjectController {
     }
   }
 
-  @ApiOperation({ summary: 'Удаление задачи (архивация)' })
+  @ApiOperation({ summary: 'Удаление проекта (архивация)' })
   @ApiResponse({
     status: 200,
-    // type: DeleteUserResponseSchema,
-    description: 'Задача успешно удалёна',
+    type: DeleteForProjectResponseSchema,
+    description: 'Проект успешно удалён',
   })
   @ApiBadRequestResponse({
-    // type: DeleteUserErrorSchema,
-    description: 'Задача уже удалена',
+    type: DeleteProjectErrorSchema,
+    description: 'Проект уже удалён',
   })
   @Delete(':id/delete')
   async softDeleteUser(@Res() res: Response, @Param('id') id: number) {
@@ -179,7 +219,7 @@ export class ProjectController {
 
       return res
         .status(HttpStatus.OK)
-        .json({ message: 'Задача успешно удалёна', ...payload });
+        .json({ message: 'Проект успешно удалён', ...payload });
     } catch (error) {
       return res.status(error.status).json({ message: error.message });
     }

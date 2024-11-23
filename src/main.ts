@@ -5,6 +5,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from './pipes/validation.pipe';
 import * as cookieParser from 'cookie-parser';
 import { swaggerDescription } from './swagger/swagger-description';
+import { AllExceptionsFilter } from './middleware/error.filter-middleware';
+import { DebugMiddleware } from './middleware/debug-middleware';
+import { LoggingInterceptor } from '@interceptors/logging.interceptors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,7 +26,8 @@ async function bootstrap() {
   SwaggerModule.setup('/swagger', app, document);
 
   app.useGlobalPipes(new ValidationPipe());
-
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor());
   app.use(cookieParser());
 
   await app.listen(port);

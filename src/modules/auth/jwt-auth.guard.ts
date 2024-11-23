@@ -34,7 +34,7 @@ export class AuthGuard implements CanActivate {
 
       if (!token) {
         throw new HttpException(
-          'Токен отсутствует или имеет неверный формат',
+          'Пользователь не авторизован!',
           HttpStatus.UNAUTHORIZED,
         );
       }

@@ -4,7 +4,6 @@ import {
   Get,
   Post,
   Body,
-  UseInterceptors,
   HttpStatus,
   Res,
   UseGuards,
@@ -21,8 +20,14 @@ import {
 import { CreateRoleDto } from './dto/createRole.dto';
 import { RoleEntity } from './entities/role.entity';
 import { LoggingInterceptor } from '@interceptors/logging.interceptors';
-import { CreateRoleErrorSchema, GetRolesErrorSchema } from '@schemas/error-schemas';
-import { CreateRoleResponseSchema, GetRolesResponseSchema } from '@schemas/respones-schemas';
+import {
+  CreateRoleErrorSchema,
+  GetRolesErrorSchema,
+} from '@schemas/error-schemas';
+import {
+  CreateRoleResponseSchema,
+  GetRolesResponseSchema,
+} from '@schemas/respones-schemas';
 import { Roles } from '@modules/auth/roles-auth.decorator';
 import { RolesGuard } from '@modules/auth/roles.guard';
 
@@ -30,7 +35,6 @@ import { RolesGuard } from '@modules/auth/roles.guard';
 @ApiSecurity('RolesGuard')
 @Roles('ADMIN')
 @UseGuards(RolesGuard)
-@UseInterceptors(LoggingInterceptor)
 @Controller('roles')
 export class RoleController {
   constructor(private roleService: RoleService) {}

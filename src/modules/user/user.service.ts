@@ -9,6 +9,7 @@ import { RoleService } from '@modules/role/role.service';
 import { AuthUserDto } from '@modules/auth/dto/authUser.dto';
 import { AddRoleDto } from './dto/addRole.dto';
 
+
 @Injectable()
 export class UserService {
   constructor(

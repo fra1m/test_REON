@@ -66,8 +66,17 @@ class CreateProjectErrorSchema {
 class AddUserForProjectErrorSchema {
   @ApiProperty({
     type: 'string',
-    example: 'Пользователь уже добавлен',
+    example: 'У вас нет доступа!',
     description: 'Сообщение об ошибке при добавление пользователя в проект',
+  })
+  message: string;
+}
+
+class RemoveUserForProjectErrorSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Пользователь уже удален',
+    description: 'Сообщение об ошибке при удаление пользователя в проект',
   })
   message: string;
 }
@@ -76,6 +85,15 @@ class UpdateProjectErrorSchema {
   @ApiProperty({
     type: 'string',
     example: 'У вас нет доступа!',
+    description: 'Сообщение об ошибке при изменении проекта',
+  })
+  message: string;
+}
+
+class DeleteProjectErrorSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Проект не найден',
     description: 'Сообщение об ошибке при изменении проекта',
   })
   message: string;
@@ -90,5 +108,7 @@ export {
   DeleteUserErrorSchema,
   CreateProjectErrorSchema,
   AddUserForProjectErrorSchema,
+  RemoveUserForProjectErrorSchema,
   UpdateProjectErrorSchema,
+  DeleteProjectErrorSchema,
 };

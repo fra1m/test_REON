@@ -40,7 +40,7 @@ export class RolesGuard implements CanActivate {
       if (!cookie) {
         throw new HttpException(
           'Отсутствует заголовок Cookie!',
-          HttpStatus.UNAUTHORIZED,
+          HttpStatus.BAD_REQUEST,
         );
       }
 
@@ -66,8 +66,8 @@ export class RolesGuard implements CanActivate {
       }
 
       return true;
-    } catch (err) {
-      throw err;
+    } catch (error) {
+      throw error 
     }
   }
 

@@ -5,7 +5,7 @@ import { UserModule } from '@modules/user/user.module';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ApiErrorMiddleware } from './middleware/error-middleware';
+import { DebugMiddleware } from './middleware/debug-middleware';
 
 @Module({
   imports: [
@@ -39,6 +39,6 @@ import { ApiErrorMiddleware } from './middleware/error-middleware';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ApiErrorMiddleware).forRoutes('*');
+    consumer.apply(DebugMiddleware).forRoutes('*');
   }
 }

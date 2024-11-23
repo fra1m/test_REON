@@ -7,7 +7,6 @@ import {
   Patch,
   Param,
   Delete,
-  UseInterceptors,
   HttpStatus,
   Res,
   UseGuards,
@@ -52,7 +51,6 @@ import { CurrentUser } from '@modules/auth/user-token.decorator';
 import { AuthGuard } from '@modules/auth/jwt-auth.guard';
 
 @ApiTags('User CRUD')
-@UseInterceptors(LoggingInterceptor)
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
