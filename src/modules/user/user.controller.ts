@@ -14,8 +14,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/createUser.dto';
-import { UpdateUserDto } from './dto/updateUser.dto';
-import { LoggingInterceptor } from '@interceptors/logging.interceptors';
+import { RemoveRoleDto } from './dto/updateUser.dto';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -41,13 +40,14 @@ import {
   DeleteUserResponseSchema,
   RefreshTokenResponseSchema,
   RegistrationResponseSchema,
+  RemoveRoleSchema,
 } from '@schemas/respones-schemas';
 import { AuthUserDto } from '@modules/auth/dto/authUser.dto';
-import { Roles } from '@modules/auth/roles-auth.decorator';
+import { Roles } from '@decorators/roles-auth.decorator';
 import { RolesGuard } from '@modules/auth/roles.guard';
 import { AddRoleDto } from './dto/addRole.dto';
 import { Cookies } from '@decorators/cookie.decorator';
-import { CurrentUser } from '@modules/auth/user-token.decorator';
+import { CurrentUser } from '@decorators/user-token.decorator';
 import { AuthGuard } from '@modules/auth/jwt-auth.guard';
 
 @ApiTags('User CRUD')
@@ -72,6 +72,7 @@ export class UserController {
   async registrationUser(@Body() userDto: CreateUserDto, @Res() res: Response) {
     try {
       const payload = await this.userService.registrationUser(userDto);
+
       res.cookie('refreshToken', payload.tokens.refreshToken, {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         httpOnly: true,
@@ -108,7 +109,7 @@ export class UserController {
       });
 
       return res.status(HttpStatus.OK).json({
-        message: 'Авторизация прошла успешно, вы можете приступить к работе!',
+        message: 'Позздравляю, вы можете приступить к работе!',
         ...payload,
       });
     } catch (error) {
@@ -127,9 +128,10 @@ export class UserController {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         httpOnly: true,
       });
-      return res
-        .status(HttpStatus.OK)
-        .json({ message: 'Congratulations, you can play', ...payload });
+      return res.status(HttpStatus.OK).json({
+        message: 'Позздравляю, вы можете приступить к работе!',
+        ...payload,
+      });
     } catch (error) {
       return res.status(error.status).json({ message: error.message });
     }
@@ -149,17 +151,41 @@ export class UserController {
   @ApiSecurity('RolesGuard')
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  @Post('/add-role')
+  @Patch('/add-role')
   async addRole(@Body() addRoleDto: AddRoleDto, @Res() res: Response) {
     try {
       const payload = await this.userService.addRole(addRoleDto);
-      res.cookie('refreshToken', payload.tokens.refreshToken, {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-      });
 
       return res.status(HttpStatus.OK).json({
         message: 'Роль была добавлена пользователю успешно!',
+        ...payload,
+      });
+    } catch (error) {
+      return res.status(error.status).json({ message: error.message });
+    }
+  }
+
+  @ApiOperation({ summary: 'Добавление роль (только для администратора)' })
+  @ApiResponse({
+    status: 200,
+    type: RemoveRoleSchema,
+    description: 'Добавление роли пользователю',
+  })
+  @ApiResponse({
+    status: 409,
+    type: AddRoleErrorSchema,
+    description: 'Конфликт: У пользователя уже есть указанная роль',
+  })
+  @ApiSecurity('RolesGuard')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @Patch('/remove-role')
+  async removeRole(@Body() removeRoleDto: RemoveRoleDto, @Res() res: Response) {
+    try {
+      const payload = await this.userService.removeRole(removeRoleDto);
+
+      return res.status(HttpStatus.OK).json({
+        message: 'Роль у пользователя успешно удалена!',
         ...payload,
       });
     } catch (error) {

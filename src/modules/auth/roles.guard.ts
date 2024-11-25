@@ -1,16 +1,20 @@
 import {
   CanActivate,
   ExecutionContext,
+  forwardRef,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Observable } from 'rxjs';
-import { ROLES_KEY } from './roles-auth.decorator';
+import { ROLES_KEY } from '../../decorators/roles-auth.decorator';
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import { UserService } from '@modules/user/user.service';
+import { RoleEntity } from '@modules/role/entities/role.entity';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -18,11 +22,10 @@ export class RolesGuard implements CanActivate {
     private jwtService: JwtService,
     private reflector: Reflector,
     private configService: ConfigService,
+    private userService: UserService,
   ) {}
 
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     try {
       const requareRoles = this.reflector.getAllAndOverride<string[]>(
         ROLES_KEY,
@@ -44,41 +47,43 @@ export class RolesGuard implements CanActivate {
         );
       }
 
-      const token = this.extractTokenFromCookie(cookie);
+      const cookies = this.extractTokensFromCookie(cookie);
+      const refreshToken = cookies['refreshToken'];
 
-      if (!token) {
+      if (!refreshToken) {
         throw new HttpException(
           'Пользователь не авторизован!',
           HttpStatus.UNAUTHORIZED,
         );
       }
-      const user = this.jwtService.verify(token, {
+      const user = this.jwtService.verify(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
       req.user = user;
 
       if (
-        user.roles.some((role: any) => requareRoles.includes(role.value)) ===
-        false
+        user.roles.some((role: RoleEntity) =>
+          requareRoles.includes(role.value),
+        ) === false
       ) {
         throw new HttpException('У вас нет доступа!', HttpStatus.FORBIDDEN);
       }
 
       return true;
     } catch (error) {
-      throw error 
+      throw error;
     }
   }
 
-  private extractTokenFromCookie(cookie: string): string | null {
-    const cookies = cookie.split(';');
-    for (const item of cookies) {
+  private extractTokensFromCookie(cookie: string): Record<string, string> {
+    const cookies: Record<string, string> = {};
+    cookie.split(';').forEach((item) => {
       const [key, value] = item.split('=').map((part) => part.trim());
-      if (key === 'refreshToken') {
-        return value;
+      if (key && value) {
+        cookies[key] = value;
       }
-    }
-    return null;
+    });
+    return cookies;
   }
 }

@@ -12,6 +12,7 @@ import { AuthUserDto } from './dto/authUser.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TokenEntity } from './entities/token.entity';
 import { Repository } from 'typeorm';
+import { TaskEntity } from '@modules/task/entities/task.entity';
 
 @Injectable()
 export class AuthService {
@@ -22,14 +23,13 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async generateToken(user: UserEntity) {
+  async generateToken(user: UserEntity, tasks?: TaskEntity[]) {
     const payload = {
       id: user.id,
       email: user.email,
       name: user.name,
       roles: user.roles,
     };
-
     const accesToken = this.jwtService.sign(payload, {
       secret: this.configService.get('JWT_SECRET_SECRET'),
       expiresIn: '30m',
@@ -39,7 +39,6 @@ export class AuthService {
       secret: this.configService.get('JWT_REFRESH_SECRET'),
       expiresIn: '30d',
     });
-
     return { accesToken, refreshToken };
   }
 

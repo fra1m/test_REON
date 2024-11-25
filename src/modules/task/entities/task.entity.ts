@@ -1,10 +1,12 @@
 import { ProjectEntity } from '@modules/project/entities/project.entity';
 import { UserEntity } from '@modules/user/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
+
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
@@ -35,9 +37,13 @@ export class TaskEntity extends BaseEntity {
 
   @ApiProperty({
     type: () => [UserEntity],
-    description: 'Ответсвенные за задачу',
+    description: 'Ответственные за задачу',
   })
-  @ManyToMany(() => UserEntity, { cascade: true })
+  @ManyToMany(() => UserEntity, (user) => user.tasks, {
+    cascade: true,
+    eager: true,
+    nullable: true,
+  })
   @JoinTable({
     name: 'tasks_users',
     joinColumn: {
@@ -58,17 +64,15 @@ export class TaskEntity extends BaseEntity {
   @Column({
     type: 'timestamp',
     precision: 0,
-    default: () => 'CURRENT_TIMESTAMP',
-    select: false,
-    nullable: true,
+    default: null,
   })
-  deadline: Date;
+  deadline: Date | null;
 
   @ApiProperty({
     example: false,
     description: 'Статус задачи (true/false)',
   })
-  @Column()
+  @Column({ default: false })
   status: boolean;
 
   @ApiProperty({
@@ -76,5 +80,14 @@ export class TaskEntity extends BaseEntity {
     description: 'Проект, к которому относится задача',
   })
   @ManyToOne(() => ProjectEntity, (project) => project.tasks)
-  project: ProjectEntity;
+  @JoinColumn({ name: 'project_Id ' })
+  project?: ProjectEntity;
+
+  @DeleteDateColumn({
+    type: 'timestamp',
+    precision: 0,
+    select: false,
+    nullable: true,
+  })
+  deletedAt: Date | null;
 }

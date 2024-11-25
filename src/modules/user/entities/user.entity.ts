@@ -12,6 +12,8 @@ import {
 import { RoleEntity } from '../../role/entities/role.entity';
 import { ProjectEntity } from '@modules/project/entities/project.entity';
 import { TokenEntity } from '@modules/auth/entities/token.entity';
+import { TaskEntity } from '@modules/task/entities/task.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity({ name: 'users' })
 export class UserEntity extends BaseEntity {
@@ -65,6 +67,9 @@ export class UserEntity extends BaseEntity {
     cascade: true,
   })
   projects: ProjectEntity[];
+
+  @ManyToMany(() => TaskEntity, (task) => task.responsibles)
+  tasks: TaskEntity[];
 
   @ApiProperty({
     type: () => [RoleEntity],

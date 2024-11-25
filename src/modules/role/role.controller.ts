@@ -28,7 +28,7 @@ import {
   CreateRoleResponseSchema,
   GetRolesResponseSchema,
 } from '@schemas/respones-schemas';
-import { Roles } from '@modules/auth/roles-auth.decorator';
+import { Roles } from '@decorators/roles-auth.decorator';
 import { RolesGuard } from '@modules/auth/roles.guard';
 
 @ApiTags('Roles CRUD')

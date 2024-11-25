@@ -1,6 +1,8 @@
 import { TokenEntity } from '@modules/auth/entities/token.entity';
 import { ProjectEntity } from '@modules/project/entities/project.entity';
 import { RoleEntity } from '@modules/role/entities/role.entity';
+import { TaskEntity } from '@modules/task/entities/task.entity';
+import { RemoveRoleDto } from '@modules/user/dto/updateUser.dto';
 import { UserEntity } from '@modules/user/entities/user.entity';
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 
@@ -36,6 +38,29 @@ class RemoveUserForProjectWithoutRelations extends OmitType(ProjectEntity, [
   'author',
 ] as const) {}
 
+class uu extends OmitType(TaskEntity, []) {}
+
+class RemoveRoleSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Роль у пользователя успешно удалена!',
+    description: 'Сообщение о результате операции',
+  })
+  message: string;
+
+  @ApiProperty({
+    type: UserWithoutPrivateFields,
+    description: 'Информация о пользователе (без пароля и приватных полей)',
+  })
+  user: UserEntity;
+
+  @ApiProperty({
+    type: Tokens,
+    description: 'Объект, содержащий токены (access и refresh)',
+  })
+  tokens: Tokens;
+}
+
 class RegistrationResponseSchema {
   @ApiProperty({
     type: 'string',
@@ -60,7 +85,7 @@ class RegistrationResponseSchema {
 class AuthResponseSchema {
   @ApiProperty({
     type: 'string',
-    example: 'Авторизация прошла успешно, вы можете приступить к работе!',
+    example: 'Позздравляю, вы можете приступить к работе!',
     description: 'Сообщение о результате операции',
   })
   message: string;
@@ -233,6 +258,21 @@ class UpdateProjectResponseSchema {
   project: ProjectEntity;
 }
 
+class UpdateTaskResponseSchema {
+  @ApiProperty({
+    type: 'string',
+    example: 'Измененные поля: name, description, status, project_id',
+    description: 'Сообщение о результате операции',
+  })
+  message: string;
+
+  @ApiProperty({
+    type: TaskEntity,
+    description: 'Сущность задача',
+  })
+  task: TaskEntity;
+}
+
 export {
   AuthResponseSchema,
   RegistrationResponseSchema,
@@ -246,4 +286,6 @@ export {
   RemoveUserForProjectResponseSchema,
   UpdateProjectResponseSchema,
   DeleteForProjectResponseSchema,
+  RemoveRoleSchema,
+  UpdateTaskResponseSchema,
 };

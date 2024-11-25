@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/createUser.dto';
-import { UpdateUserDto } from './dto/updateUser.dto';
+import { RemoveRoleDto } from './dto/updateUser.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
@@ -8,7 +8,7 @@ import { AuthService } from '@modules/auth/auth.service';
 import { RoleService } from '@modules/role/role.service';
 import { AuthUserDto } from '@modules/auth/dto/authUser.dto';
 import { AddRoleDto } from './dto/addRole.dto';
-
+import { TaskService } from '@modules/task/task.service';
 
 @Injectable()
 export class UserService {
@@ -21,12 +21,12 @@ export class UserService {
 
   async getUserByEmail(email: string) {
     if (!email) {
-      return null;
+      throw new HttpException('Пользователь не найден', HttpStatus.BAD_REQUEST);
     }
 
     const user = await this.userRepository.findOne({
       where: { email },
-      relations: ['roles'],
+      relations: ['roles', 'tasks'],
     });
 
     return user;
@@ -34,29 +34,17 @@ export class UserService {
 
   async getUserById(id: number) {
     if (!id) {
-      return null;
+      throw new HttpException('Пользователь не найден', HttpStatus.BAD_REQUEST);
     }
 
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['roles'],
+      relations: ['roles', 'tasks'],
     });
 
     if (!user) {
       throw new HttpException('Пользователь не найден', HttpStatus.BAD_REQUEST);
     }
-
-    return user;
-  }
-
-  async getUserByToken(token: string) {
-    const token$ = await this.authService.findToken(token);
-    if (!token$) {
-      throw new HttpException('Возникла ошибка сервера', HttpStatus.NOT_FOUND);
-    }
-    const user = await this.userRepository.findOne({
-      where: { id: token$.userId.id },
-    });
 
     return user;
   }
@@ -93,7 +81,6 @@ export class UserService {
 
   async authUser(authUserDto: AuthUserDto) {
     const candidate = await this.getUserByEmail(authUserDto.email);
-
     if (!candidate) {
       throw new HttpException(
         'Пользователь с таким email не существует',
@@ -103,11 +90,15 @@ export class UserService {
 
     const user$ = await this.authService.auth(authUserDto, candidate);
     const { password, ...user } = user$;
-
     const tokens = await this.authService.generateToken(user$);
     await this.authService.saveToken(user$, tokens.refreshToken);
 
-    return { user, tokens };
+    await this.authService.saveToken(user$, tokens.refreshToken);
+    const tasks = user.tasks.map((task) => ({
+      ...task,
+      responsibles: task.responsibles.map(({ password, ...rest }) => rest),
+    }));
+    return { ...user, tasks: user.tasks.length > 0 ? tasks : [], tokens };
   }
 
   async refreshToken(refreshToken: string) {
@@ -135,7 +126,12 @@ export class UserService {
     const tokens = await this.authService.generateToken(user$);
     await this.authService.saveToken(user$, tokens.refreshToken);
 
-    return { user, tokens };
+    await this.authService.saveToken(user$, tokens.refreshToken);
+    const tasks = user.tasks.map((task) => ({
+      ...task,
+      responsibles: task.responsibles.map(({ password, ...rest }) => rest),
+    }));
+    return { ...user, tasks: user.tasks.length > 0 ? tasks : [], tokens };
   }
 
   async logount(refreshToken: string) {
@@ -153,12 +149,11 @@ export class UserService {
       if (!roleExists) {
         user$.roles.push(role);
         await this.userRepository.save(user$);
-        const { password, ...user } = user$;
+        const { password, tasks, ...user } = user$;
 
         const tokens = await this.authService.generateToken(user$);
         await this.authService.saveToken(user$, tokens.refreshToken);
-
-        return { user, tokens };
+        return { user };
       }
       throw new HttpException(
         `У пользователя уже есть роль ${addRoleDto.value}`,
@@ -174,7 +169,35 @@ export class UserService {
   async softDeleteUser(userId: number, refreshToken: string) {
     await this.authService.removeToken(refreshToken);
     const user = await this.getUserById(userId);
-
     await this.userRepository.softDelete(user.id);
+  }
+
+  async removeRole(removeRoleDto: RemoveRoleDto) {
+    const user$ = await this.getUserById(removeRoleDto.userId);
+    const role$ = await this.roleService.getRoleByValue(removeRoleDto.value);
+    const roleExists = user$.roles.some(
+      (role) => role.value === removeRoleDto.value,
+    );
+
+    if (user$ && role$) {
+      if (roleExists) {
+        user$.roles = user$.roles.filter((role) => role.value !== role$.value);
+        await this.userRepository.save(user$);
+        const { password, tasks, ...user } = user$;
+
+        const tokens = await this.authService.generateToken(user$);
+        await this.authService.saveToken(user$, tokens.refreshToken);
+
+        return { user, tokens };
+      }
+      throw new HttpException(
+        `У пользователя нет роли ${removeRoleDto.value}`,
+        HttpStatus.CONFLICT,
+      );
+    }
+    throw new HttpException(
+      'Пользователь или роль не найдены',
+      HttpStatus.NOT_FOUND,
+    );
   }
 }

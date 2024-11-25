@@ -117,7 +117,6 @@ export class LoggingInterceptor implements NestInterceptor {
     const { ip, method, path: url } = request;
     const now = Date.now();
 
-    // Логирование начала запроса
     this.logger.log(`Starting Request: ${method} ${url} from ${ip}`);
 
     return next.handle().pipe(
@@ -126,7 +125,6 @@ export class LoggingInterceptor implements NestInterceptor {
         const { statusCode } = response;
         const duration = Date.now() - now;
 
-        // Логирование завершения запроса
         this.logger.log(
           `Request completed: ${method} ${url} ${statusCode} - ${duration}ms from ${ip}`,
         );

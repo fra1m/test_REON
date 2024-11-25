@@ -17,7 +17,7 @@ export class DebugMiddleware implements NestMiddleware {
     this.logger.debug(this.formatRequestLog(req));
 
     res.on('finish', () => {
-      const duration = Date.now() - startTime; // Время выполнения запроса
+      const duration = Date.now() - startTime;
       this.logger.debug(this.formatResponseLog(req, res, duration));
     });
 

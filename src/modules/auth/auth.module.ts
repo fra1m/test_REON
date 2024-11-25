@@ -5,15 +5,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthGuard } from './jwt-auth.guard';
 import { TokenEntity } from './entities/token.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserModule } from '@modules/user/user.module';
 
 @Module({
   imports: [
+    forwardRef(() => UserModule),
     TypeOrmModule.forFeature([TokenEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET_KEY') || 'SECRET',
+        secret: configService.get<string>('JWT_SECRET_SECRET') || 'SECRET',
         signOptions: {
           expiresIn: '24h',
         },

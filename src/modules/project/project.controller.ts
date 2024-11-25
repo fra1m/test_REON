@@ -28,7 +28,7 @@ import { ProjectEntity } from './entities/project.entity';
 import { TokenEntity } from '@modules/auth/entities/token.entity';
 import { UserEntity } from '@modules/user/entities/user.entity';
 import { CreateProjectBodySchema } from '@schemas/body-schemas';
-import { Roles } from '@modules/auth/roles-auth.decorator';
+import { Roles } from '@decorators/roles-auth.decorator';
 import { RolesGuard } from '@modules/auth/roles.guard';
 import {
   AddUserForProjectResponseSchema,
@@ -38,7 +38,7 @@ import {
   RemoveUserForProjectResponseSchema,
   UpdateProjectResponseSchema,
 } from '@schemas/respones-schemas';
-import { CurrentUser } from '@modules/auth/user-token.decorator';
+import { CurrentUser } from '@decorators/user-token.decorator';
 import { UpdateProjectDto } from './dto/updateProject.dto';
 import {
   AddUserForProjectErrorSchema,
@@ -80,12 +80,6 @@ export class ProjectController {
     try {
       createProjectDto.author = user;
       const payload = await this.projectService.createProject(createProjectDto);
-
-      res.cookie('refreshToken', payload.tokens.refreshToken, {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        sameSite: 'strict',
-      });
 
       return res
         .status(HttpStatus.OK)

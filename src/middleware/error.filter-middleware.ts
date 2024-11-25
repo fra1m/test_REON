@@ -29,7 +29,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       `Ошибка: ${AllExceptionsFilter.name}: ${request.method} ${request.url} ${request.ip}`,
     );
 
-    // Формирование ответа
     response.status(status).json({ message });
   }
 }

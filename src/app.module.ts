@@ -6,6 +6,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DebugMiddleware } from './middleware/debug-middleware';
+import { AuthModule } from '@modules/auth/auth.module';
 
 @Module({
   imports: [

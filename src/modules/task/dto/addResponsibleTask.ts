@@ -1,11 +1,10 @@
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateTaskDto } from './createTask.dto';
+import { UserEntity } from '@modules/user/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber } from 'class-validator';
+import { IsNumber } from 'class-validator';
 
-export class RemoveRoleDto {
-  @ApiProperty({ example: 'USER', description: 'Роль' })
-  @IsString({ message: 'Должно быть строкой' })
-  value: string;
-
+export class AddResponsibleTaskDTO {
   @ApiProperty({
     example: '1',
     description: 'Уникальный идентификатор пользователя',

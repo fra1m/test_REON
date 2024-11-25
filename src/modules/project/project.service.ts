@@ -20,16 +20,7 @@ export class ProjectService {
   async createProject(createProjectDto: CreateProjectDto) {
     const project = await this.projectRepository.save(createProjectDto);
 
-    const tokens = await this.authService.generateToken(
-      createProjectDto.author,
-    );
-
-    await this.authService.saveToken(
-      createProjectDto.author,
-      tokens.refreshToken,
-    );
-
-    return { project, tokens };
+    return { project };
   }
 
   async getProjectById(id: number) {
@@ -39,13 +30,46 @@ export class ProjectService {
 
     const project = await this.projectRepository.findOne({
       where: { id },
-      relations: ['users'],
+      relations: ['users', 'author'],
     });
     if (!project) {
-      throw new HttpException('Проект не найден', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Проект не найден или удален',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     return project;
+  }
+
+  async filterProject(id: number) {
+    if (!id) return null;
+
+    const project = await this.projectRepository.findOne({
+      where: { id },
+      relations: ['users', 'author', 'tasks', 'tasks.responsibles'],
+    });
+
+    if (!project) {
+      throw new HttpException(
+        'Проект не найден или удален',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const { password, ...author } = project.author;
+    const users = project.users.map(({ password, ...rest }) => rest);
+    const tasks = project.tasks.map((task) => ({
+      ...task,
+      responsibles: task.responsibles.map(({ password, ...rest }) => rest),
+    }));
+
+    return {
+      ...project,
+      author,
+      users: project.users.length > 0 ? users : [],
+      tasks: project.tasks.length > 0 ? tasks : [],
+    };
   }
 
   async addUserForProject(
@@ -67,10 +91,14 @@ export class ProjectService {
       addUserForProjectDto.userId,
     );
 
-    project.users.push(user);
-    await this.projectRepository.save(project);
+    await this.projectRepository
+      .createQueryBuilder()
+      .relation(ProjectEntity, 'users')
+      .of(project)
+      .add(user);
 
-    return { project, user };
+    const updatedProject = await this.filterProject(project_id);
+    return { project: updatedProject };
   }
 
   async removeUserForProject(
@@ -94,13 +122,15 @@ export class ProjectService {
       removeUserForProjectDto.userId,
     );
 
-    project.users = project.users.filter(
-      (user) => user.id !== removeUserForProjectDto.userId,
-    );
+    await this.projectRepository
+      .createQueryBuilder()
+      .relation(ProjectEntity, 'users')
+      .of(project)
+      .remove(user);
 
-    await this.projectRepository.save(project);
+    const updatedProject = await this.filterProject(project_id);
 
-    return { project, user };
+    return { project: updatedProject };
   }
 
   async patch(updateProjectDto: UpdateProjectDto, project_id: number) {
@@ -114,13 +144,20 @@ export class ProjectService {
         project[key] = value;
       }
     }
-    await this.projectRepository.save(project);
 
-    return { project, changes };
+    await this.projectRepository
+      .createQueryBuilder()
+      .update()
+      .set(updateProjectDto)
+      .where('id = :id', { id: project_id })
+      .execute();
+
+    const updatedProject = await this.filterProject(project_id);
+    return { project: updatedProject, changes };
   }
 
   async softDeleteProject(projectId: number) {
-    const project = await this.getProjectById(projectId);
+    const project = await this.filterProject(projectId);
     await this.projectRepository.softDelete(project.id);
     return { project };
   }
